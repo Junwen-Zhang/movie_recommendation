@@ -1,21 +1,29 @@
 import findspark
 findspark.init()
 
-from pyspark.sql import SparkSession
-import math
+from pyspark import SparkContext
+from pyspark.sql import SQLContext, SparkSession
 import os
 
-# 加载数据
-spark = SparkSession.builder.appName('getTrend').getOrCreate()
+def get_trend():
+    sc = SparkContext()
+    sc.setLogLevel("WARN")
 
-complete_ratings_file = os.path.join('datasets', 'ml-latest', 'ratings.csv')
-df = spark.read.csv(complete_ratings_file, sep=',', inferSchema=True, header=True)
+    # 连接mongodb
+    input_uri = 'mongodb://mongodb:27017/{}.{}'.format('movie', 'trend_rank')
 
-df.show(10)
+    my_spark = SparkSession\
+        .builder\
+        .appName("MyApp")\
+        .config("spark.mongodb.input.uri", input_uri)\
+        .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.11:2.4.1') \
+        .getOrCreate()
 
-# 获取热门(评论数最多)
-df = df.groupBy("movieID").count()
-df.show(10)
+    df = my_spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
+    df = df.sample(fraction = 1.0*11/250).limit(10)
+    df.show()
 
-df = df.sort(['count'], ascending=False)
-df.show(10)
+    id_array = df.select("movieID").rdd.flatMap(lambda x: x).collect()
+    print(id_array)
+
+    return id_array
