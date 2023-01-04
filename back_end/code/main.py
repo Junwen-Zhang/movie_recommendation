@@ -3,7 +3,7 @@ import uvicorn
 # FASTAPI模板
 from fastapi import FastAPI
 # 注册相应的api
-from api import user
+from api import user,rec
 # 配置跨域
 from starlette.middleware.cors import CORSMiddleware
 # 返回json格式的数据
@@ -44,6 +44,7 @@ app.add_middleware(
 ## 注册api模块
 # app.include_router(audio.router,prefix="/api/audios")
 app.include_router(user.router,prefix="/main")
+app.include_router(rec.router,prefix="/recmv")
 # app.include_router(admin.router,prefix="/yyjsb/admin")
 # app.include_router(user.router,prefix="/yyjsb/users")
 # app.include_router(comment.router,prefix="/yyjsb/comment")
