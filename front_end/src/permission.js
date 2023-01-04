@@ -29,22 +29,22 @@ router.beforeEach(async(to, from, next) => {
       // determine whether the user has obtained his permission roles through getInfo
       const hasRoles = store.getters.roles && store.getters.roles.length > 0
       if (hasRoles) {
-		console.log("permission.js")
+        console.log('permission.js')
         next()
       } else {
         try {
           // get user info
           // note: roles must be a object array! such as: ['admin'] or ,['developer','editor']
-          console.log("user/getInfo before")
-          const { roles } = await store.dispatch('user/getInfo')   // 直接报错
+          console.log('user/getInfo before')
+          const { roles } = await store.dispatch('user/getInfo') // 直接报错
           // roles = state.token
-          console.log("user/getInfo, roles: ", roles)
+          console.log('我要的数据', roles)
 
           // generate accessible routes map based on roles
-          console.log("generateRoutes before")
+          console.log('generateRoutes before')
           // roles={"admin",'111111'}
           const accessRoutes = await store.dispatch('permission/generateRoutes', roles)
-          console.log("generateRoutes after, accessRoutes:", accessRoutes)
+          console.log('generateRoutes after, accessRoutes:', accessRoutes)
 
           // dynamically add accessible routes
           router.addRoutes(accessRoutes)
