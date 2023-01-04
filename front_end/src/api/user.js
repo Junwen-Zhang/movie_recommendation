@@ -5,7 +5,7 @@ export function login(data) {
     url: '/login',
     method: 'get',
     params: data,
-    baseURL: 'http://localhost:8000/main' // 直接通过覆盖的方式
+    baseURL: 'https://4244802384.wocp.fun/main' // 直接通过覆盖的方式
   })
 }
 
@@ -15,7 +15,7 @@ export function register(data) {
     url: '/register',
     method: 'get',
     params: data,
-    baseURL: 'http://localhost:8000/main' // 直接通过覆盖的方式
+    baseURL: 'https://4244802384.wocp.fun/main' // 直接通过覆盖的方式
   })
 }
 
@@ -28,7 +28,7 @@ export function register(data) {
 // }
 
 export function getInfo(token) {
-  console.log("api/user.js token")
+  console.log('api/user.js token')
   console.log(token)
   return request({
     url: '/vue-element-admin/user/info',
