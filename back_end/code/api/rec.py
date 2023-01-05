@@ -166,3 +166,105 @@ async def recByTag(uid:str):
             },
             "message":"success"
         })
+
+
+# 基于矩阵SVD的协同推荐
+import random
+import numpy as np
+
+@router.get("/recbycf",tags=["recbycf"])
+async def recByGenre(uid:str):
+    k = 5
+    m_cnt = 1000
+
+    # 取出user的movie list
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['user_movielist']
+    result = collection.find_one({'userId': uid})
+    # 待补充! 需要处理数据使得user_list格式为[[mid,rate],[mid,rate],...]
+    user_list = [[1, 5.0], [2, 5.0], [3, 4.0]]
+
+    # 取出用户向量
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['model']
+    user_col = db['user_matrix']
+
+    count = user_col.count_documents({'uid': uid})
+    if count == 0:  # 用户无记录 生成随机数解决冷启动问题
+        ulist = []
+        for i in range(k):
+            ulist.append({'uid': uid, 'index': i+1, 'num':random.random()})
+        user_col.insert_many(ulist)
+    user_data = user_col.find({'uid': uid})
+    ul = []
+    for i in user_data:
+        ul.append(i['num'])
+    user_array = np.array(ul)
+
+    # 遍历物品向量 计算
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['model']
+    item_col = db['movie_matrix']
+
+    pred_dict = {}
+    for i in range(m_cnt):
+        iid = i+1
+        count = item_col.count_documents({'iid': iid})
+        if count == 0:
+            ilist = []
+            for i in range(k):
+                ilist.append({'iid': iid, 'index': i+1, 'num':random.random()})
+            item_col.insert_many(ilist)
+        item_data = item_col.find({'iid': iid})
+        il = []
+        for i in item_data:
+            il.append(i['num'])
+        item_array = np.array(il)
+        ans = np.dot(user_array, item_array)
+        if ans > 5:
+            ans = 5.0
+        if ans < 0.5:
+            ans = 0.5
+        pred_dict[iid] = ans  
+    # print(pred_dict)
+        
+    # 对已有评价的物品 向梯度方向移动一步
+    lr = 0.5
+    for i in user_list:
+        iid = i[0]
+        item_data = item_col.find({'iid': iid})
+        il = []
+        for j in item_data:
+            il.append(j['num'])
+        i_array = np.array(il)
+
+        rate = i[1]
+        eui = rate - pred_dict[iid]
+        temp = user_array
+        user_array += lr * eui * i_array
+        i_array += lr * eui * temp
+
+        # 保存
+        for x in range(k):
+            user_col.update_one(filter={'uid':uid, 'index':x+1},\
+                update={"$set":{'num':user_array[x]}})
+            item_col.update_one(filter={'iid':iid, 'index':x+1},\
+                update={"$set":{'num':i_array[x]}})
+
+
+    # 高分排序
+    pred_dict = sorted(pred_dict.items(), key=lambda d:d[1], reverse = True)
+    l = []
+    for key in pred_dict:
+        l.append(key[0])
+        rec_movie_list = l[:10]
+
+    return JSONResponse(
+        content={
+            "code":200,
+            "data":{
+                'movie_list':rec_movie_list
+            },
+            "message":"success"
+        })
