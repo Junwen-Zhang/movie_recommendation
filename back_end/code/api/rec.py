@@ -42,6 +42,73 @@ async def recByTop(uid:str):
             "message":"success"
         })
 
+# 热门电影推荐
+@router.get("/recbytrend",tags=["recbytrend"])
+async def recByTrend(uid:str):  
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['trend_rank']
+    result = collection.aggregate([{'$sample': {'size': 10}}])
+    rec_movie_list = [doc['movieID'] for doc in result]
+    return JSONResponse(
+        content={
+            "code":200,
+            "data":{
+                'movie_list':rec_movie_list
+            },
+            "message":"success"
+        })
+
+# 基于分类推荐
+@router.get("/recbygenre",tags=["recbygenre"])
+async def recByGenre(uid:str):
+    # 取出user的movie list
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['user_movielist']
+    result = collection.find_one({'userId': uid})
+    # 待补充! 需要处理数据使得user_list格式为[[mid,rate],[mid,rate],...]
+    user_list = [[296, 5.0], [79132, 5.0], [2959, 5.0]]
+
+    # 计算用户喜欢的类别
+    G = {}
+    genre_list = ["Action","Adventure","Animation","Children's","Comedy",\
+        "Crime","Documentary","Drama","Fantasy","Film-Noir","Horror","Musical",\
+        "Mystery","Romance","Sci-Fi","Thriller","War","Western"]
+    for g in genre_list:
+        G.setdefault(g, 0.0)
+    
+    for m, r in user_list:
+        movie = movies.where(movies.movieId == m).collect()
+        g_list = movie[0][2].split("|")
+        for g in g_list:
+            G[g] += r
+
+    user_genre_list = sorted(G.items(), key=itemgetter(1), reverse=True)
+    # print(user_genre_list)
+    user_genre = user_genre_list[0][0]
+    print("用户最喜欢的类别为：", user_genre)
+
+    # 进行电影推荐
+    user_genre = "Crime"
+    client = pymongo.MongoClient('mongodb://localhost:27017/')
+    db = client['movie']
+    collection = db['movie_genre_rank']
+
+    myquery = {"genre": user_genre}
+    result = collection.find(myquery)
+    result = collection.aggregate([{'$sample': {'size': 10}}])
+    rec_movie_list = [doc['movieID'] for doc in result]
+
+    return JSONResponse(
+        content={
+            "code":200,
+            "data":{
+                'movie_list':rec_movie_list
+            },
+            "message":"success"
+        })
+
 # 基于标签推荐
 @router.get("/recbytag",tags=["recbytag"])
 async def recByTag(uid:str):  
