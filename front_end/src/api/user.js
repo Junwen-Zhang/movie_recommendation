@@ -5,7 +5,7 @@ export function login(data) {
     url: '/login',
     method: 'get',
     params: data,
-    baseURL: 'https://4244802384.wocp.fun/main' // 直接通过覆盖的方式
+    baseURL: 'https://e42480v384.zicp.fun/main' // 直接通过覆盖的方式
   })
 }
 
@@ -15,7 +15,7 @@ export function register(data) {
     url: '/register',
     method: 'get',
     params: data,
-    baseURL: 'https://4244802384.wocp.fun/main' // 直接通过覆盖的方式
+    baseURL: 'https://e42480v384.zicp.fun/main' // 直接通过覆盖的方式
   })
 }
 
