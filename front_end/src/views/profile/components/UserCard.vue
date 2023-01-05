@@ -19,7 +19,7 @@
 
     <div class="user-bio">
       <div class="user-education user-bio-section">
-        <div class="user-bio-section-header"><svg-icon icon-class="star" /><span>Education</span></div>
+        <div class="user-bio-section-header"><svg-icon icon-class="star" /><span>个性签名</span></div>
         <div class="user-bio-section-body">
           <div class="text-muted">
             爱看电影的小姐姐一枚ya
@@ -27,27 +27,6 @@
         </div>
       </div>
 
-      <div class="user-skills user-bio-section">
-        <div class="user-bio-section-header"><svg-icon icon-class="skill" /><span>我观看过的电影</span></div>
-        <div class="user-bio-section-body">
-          <div class="progress-item">
-            <span>动作</span>
-            <el-progress :percentage="40" />
-          </div>
-          <div class="progress-item">
-            <span>冒险</span>
-            <el-progress :percentage="18" />
-          </div>
-          <div class="progress-item">
-            <span>喜剧</span>
-            <el-progress :percentage="12" />
-          </div>
-          <div class="progress-item">
-            <span>奇幻</span>
-            <el-progress :percentage="30" />
-          </div>
-        </div>
-      </div>
     </div>
   </el-card>
 </template>

@@ -63,10 +63,6 @@ export default {
       movienamelist: [],
       movieidlist: [],
       carouselImages: [
-        'https://wpimg.wallstcn.com/9679ffb0-9e0b-4451-9916-e21992218054.jpg',
-        'https://wpimg.wallstcn.com/bcce3734-0837-4b9f-9261-351ef384f75a.jpg',
-        'https://wpimg.wallstcn.com/d1d7b033-d75e-4cd6-ae39-fcd5f1c0a7c5.jpg',
-        'https://wpimg.wallstcn.com/50530061-851b-4ca5-9dc5-2fead928a939.jpg'
       ],
       avatarPrefix,
       carouselPrefix
@@ -85,15 +81,12 @@ export default {
       axios.get('https://4244802384.wocp.fun/maingetcomments?uid=' + this.uid).then(
         Response => {
           console.log('请求成功了', Response.data)
-          console.log('！！！！！！！！！！！', JSON.parse(localStorage.getItem('realusername')))
-          console.log('！！！！！！！！！！！', JSON.parse(localStorage.getItem('realuserid')))
           this.responseBody = Response.data
           for (var i = 0; i < this.responseBody.data.comments.length; i++) {
             this.movieidlist.push(this.responseBody.data.comments[i][3])
           }
-          console.log('打印movieidlist', this.movieidlist)
           for (i = 0; i < this.responseBody.data.comments.length; i++) {
-            axios.get('https://4244802384.wocp.fun/maingetmoviename?movieid=' + this.movieidlist[i]).then(
+            axios.get('https://4244802384.wocp.fun/maingetmoviename?movieid=' + parseInt(this.movieidlist[i])).then(
               Response => {
                 console.log('请求成功了', Response.data)
                 this.moviename = Response.data.data.movies
@@ -104,8 +97,16 @@ export default {
                 this.moviename = Error.message
               }
             )
+            axios.get('https://4244802384.wocp.fun/main/getpic?movieId=' + parseInt(this.movieidlist[i])).then(
+              Response => {
+                console.log('请求成功了电影海报', this.movieidlist[i])
+                this.carouselImages.push(Response.data.data.picture)
+              },
+              Error => {
+                console.log('请求失败了电影海报', Response.message)
+              }
+            )
           }
-          console.log('打印movienamelist', this.movienamelist)
         },
         Error => {
           console.log('请求失败了', Response.message)
