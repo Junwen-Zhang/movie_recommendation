@@ -1,13 +1,13 @@
 <template>
   <div class="user-activity">
-    <div v-for="(comment,index) in responseBody.data.comments" :key="index" class="post">
+    <div v-for="(comment,index) in realcomment" :key="index" class="post">
       <div class="user-block">
         <img class="img-circle" :src="'https://wpimg.wallstcn.com/57ed425a-c71e-4201-9428-68760c0537c4.jpg'+avatarPrefix">
         <span class="username text-muted">{{ username }}</span>
-        <span class="description">{{ movienamelist[index] + "   " +comment[2] }} </span>
+        <span class="description">{{ movienamelist[index] + "   " +comment["date"] }} </span>
       </div>
       <p>
-        {{ comment[1] }}
+        {{ comment["comment"] }}
       </p>
       <ul class="list-inline">
         <li>
@@ -56,6 +56,7 @@ import axios from 'axios'
 export default {
   data() {
     return {
+      realcomment: [],
       uid: '',
       username: '',
       responseBody: null,
@@ -78,15 +79,20 @@ export default {
       this.username = JSON.parse(localStorage.getItem('realusername'))
     },
     requestHttpParseGson() {
-      axios.get('https://4244802384.wocp.fun/maingetcomments?uid=' + this.uid).then(
+      axios.get('https://e42480v384.zicp.fun/maingetcomments?uid=' + this.uid).then(
         Response => {
-          console.log('请求成功了', Response.data)
           this.responseBody = Response.data
           for (var i = 0; i < this.responseBody.data.comments.length; i++) {
-            this.movieidlist.push(this.responseBody.data.comments[i][3])
+            var str1 = Response.data.data.comments[i]
+            str1 = str1.replaceAll('\'', '\"')
+            var j1 = JSON.parse(str1)
+            console.log('j1', j1["comment"])
+            this.movieidlist.push(j1["movieid"])
+            this.realcomment.push(j1)
           }
+          console.log('6666', this.realcomment)
           for (i = 0; i < this.responseBody.data.comments.length; i++) {
-            axios.get('https://4244802384.wocp.fun/maingetmoviename?movieid=' + parseInt(this.movieidlist[i])).then(
+            axios.get('https://e42480v384.zicp.fun/maingetmoviename?movieid=' + parseInt(this.movieidlist[i])).then(
               Response => {
                 console.log('请求成功了', Response.data)
                 this.moviename = Response.data.data.movies
@@ -97,7 +103,7 @@ export default {
                 this.moviename = Error.message
               }
             )
-            axios.get('https://4244802384.wocp.fun/main/getpic?movieId=' + parseInt(this.movieidlist[i])).then(
+            axios.get('https://e42480v384.zicp.fun/main/getpic?movieId=' + parseInt(this.movieidlist[i])).then(
               Response => {
                 console.log('请求成功了电影海报', this.movieidlist[i])
                 this.carouselImages.push(Response.data.data.picture)
