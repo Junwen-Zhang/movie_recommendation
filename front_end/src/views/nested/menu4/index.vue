@@ -11,7 +11,7 @@
           <el-col v-for="k in 5" :key="k" :span="5" :offset="k>1? 1:0">
             <el-card shadow="hover" :body-style="{ padding: '0px'}">
               <img
-                :src="movieUrlList[i*10+j*5+k-16]"
+                src="https://shadow.elemecdn.com/app/element/hamburger.9cf7b091-55e9-11e9-a976-7f4d0b07eef6.png"
                 class="image"
               >
               <div style="padding: 14px;">
@@ -22,9 +22,7 @@
                     disabled
                     show-score
                   />
-                  <router-link :to="{path: '/nested/detail', query: { id: movieidlist[i*10+j*5+k-16] }}">
-                    <el-button type="text" class="button">详情</el-button>
-                  </router-link>
+                  <el-button type="text" class="button" @click="goDetail">详情</el-button>
                 </div>
               </div>
             </el-card>
@@ -33,7 +31,7 @@
       </li>
     </ul>
     <p v-if="loading">加载中...</p>
-    <p v-if="noMore">推荐结束啦，多评分几个影片再来吧😉</p>
+    <p v-if="noMore">没有更多了</p>
   </div>
 </template>
 
@@ -92,13 +90,12 @@ export default {
       movieidlist: [],
       movieTitleList: [],
       movieRateList: [],
-      movieUrlList: [],
       questcnt: 0
     }
   },
   computed: {
     noMore() {
-      return this.count >= 1
+      return this.count >= 5
     },
     disabled() {
       return this.loading || this.noMore
@@ -120,8 +117,11 @@ export default {
     initMovie() {
       this.uid = JSON.parse(localStorage.getItem('realuserid'))
     },
+    goDetail() {
+
+    },
     requestHttpParseGson() {
-      axios.get('https://e42480v384.zicp.fun/recmv/recbytag?uid=' + this.uid).then(
+      axios.get('https://e42480v384.zicp.fun/recmv/recbygenre?uid=' + this.uid).then(
         Response => {
           console.log('请求成功了', Response.data)
           this.responseBody = Response.data
@@ -139,6 +139,7 @@ export default {
                 for (var j = 0; j < result.length; j++) {
                   if (result[j] === '\'' && result[j + 1] !== 's') { res += '\"' } else { res += result[j] }
                 }
+                console.log(res)
                 var res = JSON.parse(res)
                 this.movieTitleList.push(res.Title)
                 this.movieRateList.push(parseFloat(res.avg_rating).toFixed(2))
@@ -151,20 +152,6 @@ export default {
               this.moviename = Error.message
             }
           )
-          for (var k = 0; k < 10; k++) {
-            axios.get('https://e42480v384.zicp.fun/main/getpic?movieId=' + this.movieidlist[k + this.questcnt * 10]).then(
-              Response => {
-                console.log('请求成功了', Response.data)
-                this.responseBody = Response.data
-                this.movieUrlList.push(this.responseBody.data.picture)
-                console.log('打印movieurl', this.responseBody.data.picture)
-              },
-              Error => {
-                console.log('请求失败了', Response.message)
-                this.moviename = Error.message
-              }
-            )
-          }
         },
         Error => {
           console.log('请求失败了', Response.message)

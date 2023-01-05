@@ -7,9 +7,9 @@
         </div>
         <div class="card-panel-description">
           <div class="card-panel-text">
-            用户数
+            已评分影片
           </div>
-          <count-to :start-val="0" :end-val="283229" :duration="2600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="999" :duration="2600" class="card-panel-num" />
         </div>
       </div>
     </el-col>
@@ -20,35 +20,9 @@
         </div>
         <div class="card-panel-description">
           <div class="card-panel-text">
-            电影数
+            愿望单
           </div>
-          <count-to :start-val="0" :end-val="193843" :duration="3000" class="card-panel-num" />
-        </div>
-      </div>
-    </el-col>
-    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('purchases')">
-        <div class="card-panel-icon-wrapper icon-money">
-          <svg-icon icon-class="money" class-name="card-panel-icon" />
-        </div>
-        <div class="card-panel-description">
-          <div class="card-panel-text">
-            评分数
-          </div>
-          <count-to :start-val="0" :end-val="24647404" :duration="10000" class="card-panel-num" />
-        </div>
-      </div>
-    </el-col>
-    <el-col :xs="12" :sm="12" :lg="6" class="card-panel-col">
-      <div class="card-panel" @click="handleSetLineChartData('shoppings')">
-        <div class="card-panel-icon-wrapper icon-shopping">
-          <svg-icon icon-class="message" class-name="card-panel-icon" />
-        </div>
-        <div class="card-panel-description">
-          <div class="card-panel-text">
-            标签数
-          </div>
-          <count-to :start-val="0" :end-val="1108997" :duration="3600" class="card-panel-num" />
+          <count-to :start-val="0" :end-val="666" :duration="3000" class="card-panel-num" />
         </div>
       </div>
     </el-col>
@@ -63,6 +37,9 @@ export default {
     CountTo
   },
   methods: {
+    handleSetLineChartData(type) {
+      this.$emit('handleSetLineChartData', type)
+    }
   }
 }
 </script>
