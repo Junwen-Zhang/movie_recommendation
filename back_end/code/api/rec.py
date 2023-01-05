@@ -59,6 +59,8 @@ async def recByTrend(uid:str):
             "message":"success"
         })
 
+from operator import itemgetter
+
 # 基于分类推荐
 @router.get("/recbygenre",tags=["recbygenre"])
 async def recByGenre(uid:str):
@@ -78,9 +80,10 @@ async def recByGenre(uid:str):
     for g in genre_list:
         G.setdefault(g, 0.0)
     
+    collection = db['movies']
     for m, r in user_list:
-        movie = movies.where(movies.movieId == m).collect()
-        g_list = movie[0][2].split("|")
+        movie = collection.find_one({"movieId":m})
+        g_list = movie["genres"].split("|")
         for g in g_list:
             G[g] += r
 
@@ -90,15 +93,12 @@ async def recByGenre(uid:str):
     print("用户最喜欢的类别为：", user_genre)
 
     # 进行电影推荐
-    user_genre = "Crime"
-    client = pymongo.MongoClient('mongodb://localhost:27017/')
-    db = client['movie']
     collection = db['movie_genre_rank']
-
     myquery = {"genre": user_genre}
     result = collection.find(myquery)
     result = collection.aggregate([{'$sample': {'size': 10}}])
     rec_movie_list = [doc['movieID'] for doc in result]
+    # print(rec_movie_list)
 
     return JSONResponse(
         content={
