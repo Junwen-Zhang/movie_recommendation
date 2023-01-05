@@ -22,7 +22,20 @@
         prop="movieId"
         label="电影id"
         width="180"
-      />
+      >
+        <template slot-scope="scope">
+          <router-link :to="{path: '/nested/detail', query: { id: scope.row.movieId }}">
+            <a
+              href="#"
+              target="_blank"
+              class="buttonText"
+              style="color: blue;"
+            >
+              {{ scope.row.movieId }}
+            </a>
+          </router-link>
+        </template>
+      </el-table-column>
       <el-table-column
         prop="Release Year"
         label="发行年份"
@@ -39,7 +52,12 @@ export default {
       form: {
         name: ''
       },
-      movieList: []
+      movieList: [
+        { 'Title': 'toy story',
+          'movieId': '1',
+          'Release Year': 'year'
+        }
+      ]
     }
   },
   methods: {

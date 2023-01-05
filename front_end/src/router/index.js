@@ -86,9 +86,16 @@ export const constantRoutes = [
     children: [
       {
         path: 'index',
-        name: 'Form',
+        name: 'search',
         component: () => import('@/views/search/index'),
         meta: { title: '搜索', icon: 'form' }
+      },
+      {
+        path: 'detail',
+        name: 'Detail',
+        component: () => import('@/views/search/detail'),
+        meta: { title: '详情' },
+        hidden: true
       }
     ]
   },

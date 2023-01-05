@@ -86,8 +86,8 @@ export default {
             var str1 = Response.data.data.comments[i]
             str1 = str1.replaceAll('\'', '\"')
             var j1 = JSON.parse(str1)
-            console.log('j1', j1["comment"])
-            this.movieidlist.push(j1["movieid"])
+            console.log('j1', j1['comment'])
+            this.movieidlist.push(j1['movieid'])
             this.realcomment.push(j1)
           }
           console.log('6666', this.realcomment)

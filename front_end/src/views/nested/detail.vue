@@ -4,6 +4,7 @@
       <el-aside width="200px">
         <el-image
           :src="movieUrl"
+          placeholder="url"
           :fit="fit"
         />
       </el-aside>
@@ -66,6 +67,7 @@ import axios from 'axios'
 export default {
   data() {
     return {
+      url: 'http://via.placeholder.com/200?text=Hello+world!',
       textarea2: '',
       movieTitle: '',
       movieId: 0,

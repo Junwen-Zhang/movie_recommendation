@@ -22,7 +22,9 @@
                     disabled
                     show-score
                   />
-                  <el-button type="text" class="button" @click="goDetail">详情</el-button>
+                  <router-link :to="{path: '/nested/detail', query: { id: movieidlist[i*10+j*5+k-16] }}">
+                    <el-button type="text" class="button">详情</el-button>
+                  </router-link>
                 </div>
               </div>
             </el-card>
