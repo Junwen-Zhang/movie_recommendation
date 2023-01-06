@@ -21,17 +21,12 @@ from bson.objectid import ObjectId
 # import spark.implicits._
 
 import time
-# 连接数据库
-def connectDB(tablename:str):
-    dbname="movie"
-    input_uri = 'mongodb://mongodb:27017/{}.{}'.format(dbname, tablename)
-    spark = SparkSession\
-    .builder\
-    .appName("MyApp")\
-    .config("spark.mongodb.input.uri", input_uri)\
-    .config('spark.jars.packages', 'org.mongodb.spark:mongo-spark-connector_2.11:2.4.1') \
-    .getOrCreate()
-    return spark,input_uri
+import pymongo
+import json
+import re
+import datetime
+import requests
+
 
 def getPicUrl(movieid):
     # cookie和header根据浏览器实际情况更换
@@ -57,214 +52,252 @@ def getPicUrl(movieid):
 #上传并返回数据
 @router.get("/getusername",tags=["getusername"])
 async def getUsername(uid:str):  
-    # 和数据库的链接
-    # 以及查询返回uid对应的username
-    df = my_spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    result=df.filter(df.uid == ObjectId(uid))     # 查询
-    username=result.collect()[0].uname    #取第一个记录的unam值
-    return username
+    # 连接数据库，查询返回uid对应的username
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['user']
+    result = collection.find_one({'userId': int(uid)})
+
+    if result == None : # uid不存在
+        return JSONResponse(
+            content = {
+                "code": 9999,
+                "data": {},
+                "message": "不存在改用户id: "  + uid
+            }
+        )
+    else: #uid存在
+        return JSONResponse(
+        content={
+            "code":20000,
+            "data": {
+                "username": result["username"]
+            },
+            "message":"查找用户名成功"
+        })
 
 # 注册
 @router.get("/register",tags=["register"])
-async def register(username:str,password:str):
-    spark, input_uri=connectDB("user")
-    # user = spark.createDataFrame([("uname":uname,"password":password)])
-    columns=['uname','password']
-    data=[(username, password)]
-    user = spark.createDataFrame(data,columns)
-    print(user.collect())
-    # 需要查重一下
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    users=df.filter(df.uname == username)     # 查询 
-    if(len(users.collect())):
-        uid_str=ObjectId(users.collect()[0]._id.oid).__str__()
+async def register(username:str, password:str):
+    # 连接数据库，username查重
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['user']
+    result = collection.find_one({'username': username})
+
+    if result != None:  # 存在重名，注册失败
         return JSONResponse(
         content={
             "code":20000,
             "data":{
-                'roles':['student'],
-                'name':username,
-                "success":False,
-                "uid":uid_str
+                'roles': ['student'],
+                'name': username,
+                "success": False,
+                "uid": None
             },
             "message":"注册失败，用户名重复"
         })
-    # MongoSpark.save(
-    #   user.write.mode(SaveMode.Append)# Append代表追加,Overwrite代表覆盖,写入的模式、
-    # )
-    user.write.format("com.mongodb.spark.sql.DefaultSource").option("uri",input_uri).mode("append").save()
-    users=df.filter(df.uname == username)     # 查询 
-    uid_str=ObjectId(users.collect()[0]._id.oid).__str__()
-    return JSONResponse(
-        content={
-            "code":20000,
-            "data":{
-                'roles':['admin',username,uid_str],
-                'name':username,
-                "success":True,
-                "uid":uid_str
-            },
-            "message":"注册成功"
-        })
+    else:  # 名字可用，注册成功
+        # 在user表中添加新用户的记录
+        result = collection.find({}).sort("userId",pymongo.DESCENDING).limit(1)
+        userId = result[0]["userId"] + 1 #新用户Id为已有最大Id再加1
+        collection.insert_one({"userId": userId,  
+                               "username": username,
+                               "passwd": password,
+                               "rated_movie_list": []})
+        uid_str = str(userId)
+        return JSONResponse(
+            content={
+                "code":20000,
+                "data":{
+                    'roles':['admin', username, uid_str],
+                    'name':username,
+                    "success":True,
+                    "uid":uid_str
+                },
+                "message":"注册成功"
+            })
 
 # 登陆
 @router.get("/login",tags=["login"])
 async def login(username:str,password:str):
-    print(username,password)
-    uname=username
-    # password=data['password']
-    spark,_=connectDB("user")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    users=df.filter(df.uname == uname)     # 查询
-    if(len(users.collect())==0):    # 找不到该用户
+    # 连接数据库，根据username查找user数据
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['user']
+    result = collection.find_one({'username': username})
+
+    if result == None:    # 用户不存在
         return JSONResponse(
         content={
-            "code":20000,
+            "code":9999,
             "data":{
                 "success":False
             },
-            "message":"该用户名不存在"
+            "message": "“" + username + "”用户不存在"
         })
-    if(users.collect()[0].password!=password):
+    elif result["passwd"] != password : # 密码不匹配
         return JSONResponse(
         content={
-            "code":20000,
+            "code":9999,
             "data":{
                 "success":False
             },
             "message":"密码错误"
         })
-    # print(users.collect()[0])
-    # print(users.collect()[0].show())
-    uid_str=ObjectId(users.collect()[0]._id.oid).__str__()  # 将objectId类型转化为str
-    return JSONResponse(
-        content={
-            "code":20000,
-            "data":{
-                'roles':['admin',username,uid_str],
-                'name':username,
-                "success":True,
-                "uid":uid_str
-            },
-            "message":"登陆成功"
-        })
+    else:   # 成功登录
+        uid_str = str(result["userId"])
+        return JSONResponse(
+            content={
+                "code":20000,
+                "data":{
+                    'roles':['admin',username,uid_str],
+                    'name':username,
+                    "success":True,
+                    "uid":uid_str
+                },
+                "message":"登陆成功"
+            })
 
-# 点击记录
-@router.get("/clickMovie",tags=["clickMovie"])
-async def clickMovie(uid:str,movieid:str):
-    spark=connectDB("clickmovie")
-    uid_objectId=ObjectId(uid)
-    data=[(uid_objectId,movieid)]
-    columns=['uid','movieid']
-    oneclick = spark.createDataFrame(data,columns)
-    oneclick.write.format("com.mongodb.spark.sql.DefaultSource").mode("append").save()
-    return 1
 
-# 评分
+# 评分(这个函数稍微有点慢)
 @router.get("/givescore",tags=["givescore"])
-async def giveScore(uid:str,movieid:int,score:int):
-    uid_objectId=ObjectId(uid)
-    spark=connectDB("score")
-    data=[(uid_objectId,movieid,score)]
-    columns=['uid','movieid','score']
-    oneclick = spark.createDataFrame([("uid",uid_objectId), ("movieid", movieid),("score",score)])
-    oneclick.write.format("com.mongodb.spark.sql.DefaultSource").mode("append").save()
-    return JSONResponse(
-        content={
-            "code":20000,
-            "data":{
-                
-            },
-            "message":"评分成功"
-        })
+async def giveScore(uid:str, movieid:int, score:int):
+    # 连接数据库
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    # 在user数据表中新增数据
+    rated_movie_list = db["user"].find_one({"userId": int(uid)})["rated_movie_list"]
+    if movieid not in rated_movie_list: # 若未标记过该电影
+        # 在user表中更新rated_movie_list字段
+        rated_movie_list.append(movieid)
+        db["user"].update_one({"userId": int(uid)}, 
+                              {'$set': {'rated_movie_list': rated_movie_list}})
+        # 在ratings表中新增一条数据
+        db["ratings"].insert_one({"userId": int(uid),
+                    "movieId": movieid,
+                    "rating": score,
+                    "timestamp": str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))})
+        return JSONResponse(
+            content={
+                "code": 20000,
+                "data": {},
+                "message": "增加评分成功"
+            })
+    else: # 若已经标记过该电影
+        # 在ratings表中更新rating字段
+        db["ratings"].update_one({"userId": int(uid), "movieId": movieid}, 
+                                 {'$set': {'rating': score,
+                    'timestamp': str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))}})
+        return JSONResponse(
+            content={
+                "code": 20000,
+                "data": {},
+                "message": "更新评分成功"
+            })
 
 # 获取评分的电影数量
 @router.get("/givescoresnumber",tags=["givescoresnumber"])
 async def getScoresNumber(uid:str):
-    uid_objectId=ObjectId(uid)
-    spark=connectDB("score")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    scores=df.filter(df.uid==uid)     # 查询  这个方式很可能会出错，所以待检查
+    # 连接数据库，根据username查找user数据
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['user']
+    result = collection.find_one({'userId': int(uid)})
     return JSONResponse(
         content={
             "code":20000,
             "data":{
-                "number":len(scores.collect())
+                "number": len(result["rated_movie_list"])
             },
-            "message":"查询成功"
+            "message":"已评分电影数量查询成功"
         })
 
 # 加标签
 @router.get("/givetag",tags=["givetage"])
 async def giveTags(uid:str,movieid:str,tag:str):
-    uid_objectId=ObjectId(uid)
-    spark=connectDB("tag2")
-    data=[(uid_objectId,movieid,tag)]
-    columns=['uid','movieid','tag']
-    oneclick = spark.createDataFrame([("uid",uid_objectId), ("movieid", movieid),("tag",tag)])
-    oneclick.write.format("com.mongodb.spark.sql.DefaultSource").mode("append").save()
-    return 1
+    return JSONResponse(
+        content={
+            "code":20000,
+            "data":{},
+            "message":"标签添加成功"
+        })
 
 # 搜索影片
 @router.get("/searchmovie",tags=["searchmovie"])
 async def searchMovie(name:str):
-    spark=connectDB("movies")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    movies=df.filter(df.title.find(name))     # 查询  这个方式很可能会出错，所以待检查
-    return movies.collect()
+    # 连接数据库，根据username查找user数据
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['movies']
+    # 模糊查询电影名
+    pat = re.compile(r"\w*"+name+"\w*", re.I)
+    result = list(collection.find({ "Title": {'$regex': pat}}))
+    if len(result) == 0:
+        return JSONResponse(
+            content={
+                "code":9999,
+                "data":{},
+                "message":"未找到匹配结果"
+            })
+    else:
+        movie_info_list = []
+        num = 0
+        for movie_info_dict in result:
+            num = num + 1
+            movie_info_dict.pop("_id", None)
+            movie_info_list.append(str(movie_info_dict))
+            if num >= 10 :
+                break
+        return JSONResponse(
+            content={
+                "code":20000,
+                "data":{
+                    "number": movie_info_list
+                },
+                "message":"查询成功"
+            })
 
 # 返回movie的相关信息
 @router.get("/getmovieinfor",tags=["getmovieinfor"])
 async def getMovieInfor(movieIdListStr):
-    # print(movieIdListStr)
-    movieIdList=movieIdListStr[1:-1].split(',')
-    # print(movieIdList)
-    # print(type(movieIdList))
-    # print(0 in movieIdList)
-    spark1,_=connectDB("movies")
-    movieIdList=[1,2]
-    df = spark1.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    moviesList=[]
-    spark2,_=connectDB("movie_rate")  
-    df2 = spark2.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    for i in range(len(movieIdList)):
-        movies=df.filter(df.movieId ==int(movieIdList[i]))
-        moviesList.append(movies.collect()[0].asDict())
-        # print("moviesList",moviesList)
-        # print(moviesList[i]['movieId'])
-        # print("111111111",df2.collect())
-        movieRate=df2.filter(df2.movieId==str(moviesList[i]['movieId']))
-        # print("moviesList",type(moviesList[i]))
-        if(len(movieRate.collect())):
-            moviesList[i]["rate"]=movieRate.collect()[0]['avg_rating']
-        else:
-            moviesList[i]["rate"]=0
-    # print(moviesList)
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['movies']
+
+    movieIdList=movieIdListStr[:].split(',')
+    movie_info_list = []
+    for movieId in movieIdList:
+        result = collection.find_one({"movieId": int(movieId)})
+        avg_rating = db["movie_rate"].find_one({"movieId": int(movieId)})["avg_rating"]
+        result.pop("_id", None)
+        result["avg_rating"] = avg_rating
+        movie_info_list.append(str(result))
     return JSONResponse(
         content={
             "code":20000,
             "data":{
-                'movies':moviesList
+                'movies': movie_info_list
             },
             "message":"success"
         })
 
 
 
-# 返回number篇movie的信息
-@router.get("/getmovies",tags=["getmovies"])
-async def searchMovie(number:int):
-    spark,_=connectDB("movies")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    movies=df.collect()[0:number]     # 查询  这个方式很可能会出错，所以待检查
-    return JSONResponse(
-        content={
-            "code":20000,
-            "data":{
-                'movies':movies
-            },
-            "message":"success"
-        })
+# # 返回number篇movie的信息
+# @router.get("/getmovies",tags=["getmovies"])
+# async def searchMovie(number:int):
+#     spark,_=connectDB("movies")
+#     df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
+#     movies=df.collect()[0:number]     # 查询  这个方式很可能会出错，所以待检查
+#     return JSONResponse(
+#         content={
+#             "code":20000,
+#             "data":{
+#                 'movies':movies
+#             },
+#             "message":"success"
+#         })
 
 # 返回movieid的movie图片地址
 @router.get("/getpic",tags=["getpic"])
@@ -274,7 +307,8 @@ async def getpic(movieId:int):
         content={
             "code":20000,
             "data":{
-                'picture':picUrl
+                'picture': picUrl,
+                'movieId': movieId
             },
             "message":"success"
         })
@@ -283,48 +317,93 @@ async def getpic(movieId:int):
 # 查询点评记录
 @router.get("getcomments",tags=["getcomments"])
 async def getComments(uid:str):
-    spark,_=connectDB("comments")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    # print(df.collect()[0].uid)
-    # print(type(df.collect()[0].uid))
-    comments=df.filter(df.uid==uid )     # 查询
-    return JSONResponse(
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['comments']
+    results = collection.find({"uid": int(uid)})
+    if results == None:
+        return JSONResponse(
         content={
-            "code":20000,
-            "data":{
-                'comments':comments.collect()
-            },
-            "message":"success"
+            "code":9999,
+            "data":{},
+            "message":"用户没有影评记录"
         })
-# 增加点评记录
-@router.get("addcomments",tags=["addcomments"])
-async def addComments(uid:str,movieid:str,content:str,date:str):
-    spark,input_uri=connectDB("comments")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    columns=['uid','movieid','comment','date']
-    data=[(uid, movieid,content,date)]
-    comment = spark.createDataFrame(data,columns)
-    comment.write.format("com.mongodb.spark.sql.DefaultSource").option("uri",input_uri).mode("append").save()
+    comment_info_list = []
+    for comment_info_dict in results:
+        comment_info_dict.pop("_id", None)
+        comment_info_list.append(str(comment_info_dict))
     return JSONResponse(
         content={
             "code":20000,
             "data":{
-                # 'movies':movies
+                'comments': comment_info_list
             },
             "message":"success"
         })
 
-# 根据movieid查找moviename
-@router.get("getmoviename",tags=["getmoviename"])
-async def getMovieName(movieid:int):
-    spark,input_uri=connectDB("movies")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    movies=df.filter(df.movieId==movieid )     # 查询
+# 查询电影点评记录
+@router.get("getmvcomments",tags=["getmvcomments"])
+async def getMvComments(mvid:str):
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['comments']
+    results = collection.find({"movieid": int(mvid)})
+    if results == None:
+        return JSONResponse(
+        content={
+            "code":9999,
+            "data":{},
+            "message":"该电影没有影评记录"
+        })
+    comment_info_list = []
+    for comment_info_dict in results:
+        comment_info_dict.pop("_id", None)
+        username = db["user"].find_one({"userId": comment_info_dict["uid"]})["username"]
+        comment_info_dict["username"] = username
+        comment_info_list.append(str(comment_info_dict))
     return JSONResponse(
         content={
             "code":20000,
             "data":{
-                'movies':movies.collect()[0].title
+                'comments': comment_info_list
+            },
+            "message":"success"
+        })
+
+# 增加点评记录
+@router.get("addcomments",tags=["addcomments"])
+async def addComments(uid:str,movieid:str,content:str):
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    print("add comments uid", uid)
+    db = client['movie']
+    collection = db['comments']
+    item = {
+        "uid": int(uid),
+        "movieid": int(movieid),
+        "comment": content,
+        "date": str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
+    }
+    collection.insert_one(item)
+    return JSONResponse(
+        content={
+            "code":20000,
+            "data": str(item),
+            "message":"评论添加成功"
+        })
+
+# 根据movieid查找moviename （下面都要改）
+@router.get("getmoviename",tags=["getmoviename"])
+async def getMovieName(movieid:int):
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['movies']
+
+    result = collection.find_one({"movieId": int(movieid)})
+    return JSONResponse(
+        content={
+            "code":20000,
+            "data":{
+                'movies': result["Title"]
             },
             "message":"success"
         })
@@ -332,15 +411,20 @@ async def getMovieName(movieid:int):
 # 根据uid查找评分记录
 @router.get("getratings",tags=["getratings"])
 async def getRatings(uid:str):
-    spark,input_uri=connectDB("new_ratings")
-    df = spark.read.format('com.mongodb.spark.sql.DefaultSource').load()
-    ratings=df.filter(df.userId==uid )     # 查询
+    client = pymongo.MongoClient('mongodb://mongodb:27017/')
+    db = client['movie']
+    collection = db['ratings']
+    results = collection.find({"userId": int(uid)})
+    user_rating_infos = []
+    for result in results:
+        result.pop("_id", None)
+        user_rating_infos.append(str(result))
+
     return JSONResponse(
         content={
             "code":20000,
             "data":{
-                'movies':ratings.collect()
+                'movies': user_rating_infos
             },
             "message":"success"
         })
-

@@ -3,7 +3,7 @@ import uvicorn
 # FASTAPI模板
 from fastapi import FastAPI
 # 注册相应的api
-from api import user,rec
+from api import user, rec
 # 配置跨域
 from starlette.middleware.cors import CORSMiddleware
 # 返回json格式的数据
@@ -32,6 +32,11 @@ from pyspark.sql import SparkSession
 app = FastAPI()
 ## 配置静态资源的存放路径以及请求的路径
 app.mount("/assets", StaticFiles(directory="assets"), name="assets")
+
+## 解决fastapi文档无法显示的问题
+from fastapi.staticfiles import StaticFiles
+app.mount('/static', StaticFiles(directory='static'))
+
 ## 跨域配置
 origins = ["*"]
 app.add_middleware(
