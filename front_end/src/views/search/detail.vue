@@ -1,8 +1,9 @@
 <template>
   <div class="common-layout">
     <el-container>
-      <el-aside width="200px">
+      <el-aside style="width:400px">
         <el-image
+          style="width:fit-content; height:fit-content"
           :src="movieUrl"
           placeholder="url"
           :fit="fit"
@@ -16,7 +17,7 @@
         </div>
         <el-main>
           <el-col>
-            <el-input v-model="textarea2" type="textarea" :autosize="{ minRows: 4, maxRows: 6}" placeholder="请输入影评" />
+            <el-input v-model="textarea2" type="textarea" :autosize="{ minRows: 2, maxRows: 6}" placeholder="请输入影评" />
           </el-col>
         </el-main>
         <el-footer>

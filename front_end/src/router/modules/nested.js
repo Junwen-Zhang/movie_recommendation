@@ -37,6 +37,12 @@ const nestedRouter = {
       meta: { title: '流派推荐' }
     },
     {
+      path: 'menu5',
+      name: 'Menu5',
+      component: () => import('@/views/nested/menu5/index'),
+      meta: { title: '猜你喜欢' }
+    },
+    {
       path: 'detail',
       name: 'detail',
       component: () => import('@/views/nested/detail'),

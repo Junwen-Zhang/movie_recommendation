@@ -122,7 +122,7 @@ export default {
       this.uid = JSON.parse(localStorage.getItem('realuserid'))
     },
     requestHttpParseGson() {
-      axios.get('https://e42480v384.zicp.fun/recmv/recbytrend?uid=' + this.uid).then(
+      axios.get('https://e42480v384.zicp.fun/recmv/recbycf?uid=' + this.uid).then(
         Response => {
           console.log('请求成功了', Response.data)
           this.responseBody = Response.data

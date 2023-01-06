@@ -1,7 +1,7 @@
 <template>
   <div class="block">
     <el-timeline>
-      <el-timeline-item v-for="(rating,index) in responseBody.data.movies" :key="index" :timestamp= "datelist[index]" placement="top">
+      <el-timeline-item v-for="(rating,index) in responseBody.data.movies" :key="index" :timestamp="datelist[index]" placement="top">
         <el-card>
           <h4>{{ movienamelist[index] }}</h4>
           <p v-if="starlist[index] == 1">★☆☆☆☆</p>
@@ -49,9 +49,9 @@ export default {
             str1 = str1.replaceAll('\'', '\"')
             var j1 = JSON.parse(str1)
             console.log('j1', j1)
-            this.movieidlist.push(j1["movieId"])
-            this.starlist.push(j1["rating"])
-            this.datelist.push(j1["timestamp"])
+            this.movieidlist.push(j1['movieId'])
+            this.starlist.push(j1['rating'])
+            this.datelist.push(j1['timestamp'])
           }
           for (i = 0; i < this.responseBody.data.movies.length; i++) {
             axios.get('https://e42480v384.zicp.fun/maingetmoviename?movieid=' + parseInt(this.movieidlist[i])).then(
