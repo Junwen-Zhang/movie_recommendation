@@ -16,7 +16,7 @@
       <el-table-column
         prop="Title"
         label="电影标题"
-        width="180"
+        width="300"
       >
         <template slot-scope="scope">
           <router-link :to="{path: '/search/detail', query: { id: scope.row.movieId }}">
@@ -39,6 +39,11 @@
       <el-table-column
         prop="Release Year"
         label="发行年份"
+        width="180"
+      />
+      <el-table-column
+        prop="genres"
+        label="电影流派"
       />
     </el-table>
   </div>
