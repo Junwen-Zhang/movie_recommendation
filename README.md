@@ -37,3 +37,17 @@
 -front_end(存放前端代码,可以用H-builder打开)
 -第九组专业设计报告.doc: 项目报告
 ```
+## 前端展示
+![image](https://user-images.githubusercontent.com/72862074/211006397-90372ad8-7432-4950-93b5-b7ee31d5b87d.png)
+
+![image](https://user-images.githubusercontent.com/72862074/211006459-7cb28d7c-9533-44ec-b5a0-cc957406e9ee.png)
+
+![image](https://user-images.githubusercontent.com/72862074/211006482-4189489d-bc58-4d3f-8b2b-50e866fac7f8.png)
+
+![image](https://user-images.githubusercontent.com/72862074/211006518-9e67394e-cbde-4c6a-b4fa-01ab2117c31f.png)
+
+![image](https://user-images.githubusercontent.com/72862074/211006546-1a902d42-7501-48f1-97a5-dc0ec9905f1c.png)
+
+![image](https://user-images.githubusercontent.com/72862074/211006575-15e165c6-eb8a-4610-a3bb-495e105cebea.png)
+
+
