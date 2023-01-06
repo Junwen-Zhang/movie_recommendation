@@ -14,26 +14,26 @@
 
 ## 目录说明
 ```
-back_end(存放后端部分的代码)
-  |----code(完整的网页后端代码)
-  |     |----api(后端接口函数)
-  |     |     |----rec.py: 5种推荐算法的接口
-  |     |     |----user.py: 其他功能的接口
-  |     |----rec_model_save(本地存放的模型)
-  |     |----static(fastapi需要的资源)
-  |     |----main.py: 后端入口函数
-  |----lsq(李思颀同学的代码)
-  |     |----cal_trend.py: 热门电影离线训练
-  |     |----get_trend.py: 热门电影在线推荐
-  |     |----cal_genre.py: 基于流派推荐离线训练
-  |     |----get_user_genre.py: 基于流派推荐在线推荐
-  |----zjw(章俊文同学的代码)
-  |     |----gen_top250.py: 高分电影离线训练
-  |     |----get_top.py: 高分电影在线推荐
-  |     |----prepare_data.py: 标签推荐数据准备
-  |     |----gen_movie_rec_by_tag.ipynb: 基于标签推荐离线训练并保存模型
-  |     |----get_movie_rec_by_tag.py: 基于标签的推荐
-  |     |----TagRec.model: 基于标签推荐在本地保存的模型 
-front_end(存放前端代码,可以用H-builder打开)
-第九组专业设计报告.doc: 项目报告
+-back_end(存放后端部分的代码)
+    |----code(完整的网页后端代码)
+    |     |----api(后端接口函数)
+    |     |     |----rec.py: 5种推荐算法的接口
+    |     |     |----user.py: 其他功能的接口
+    |     |----rec_model_save(本地存放的模型)
+    |     |----static(fastapi需要的资源)
+    |     |----main.py: 后端入口函数
+    |----lsq(李思颀同学的代码)
+    |     |----cal_trend.py: 热门电影离线训练
+    |     |----get_trend.py: 热门电影在线推荐
+    |     |----cal_genre.py: 基于流派推荐离线训练
+    |     |----get_user_genre.py: 基于流派推荐在线推荐
+    |----zjw(章俊文同学的代码)
+    |     |----gen_top250.py: 高分电影离线训练
+    |     |----get_top.py: 高分电影在线推荐
+    |     |----prepare_data.py: 标签推荐数据准备
+    |     |----gen_movie_rec_by_tag.ipynb: 基于标签推荐离线训练并保存模型
+    |     |----get_movie_rec_by_tag.py: 基于标签的推荐
+    |     |----TagRec.model: 基于标签推荐在本地保存的模型 
+-front_end(存放前端代码,可以用H-builder打开)
+-第九组专业设计报告.doc: 项目报告
 ```
